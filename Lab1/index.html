@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Лабораторная работа №1: ручное преобразование цветов RGB, CMYK, HLS, XYZ и Lab." />
+    <title>Цветовые модели — лабораторная работа №1</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <noscript>Для работы приложения необходимо включить JavaScript.</noscript>
+
+    <header class="page-header">
+      <div class="header-copy">
+        <div class="eyebrow">
+          <span class="variant-badge">Вариант 6</span>
+          <span>Лабораторная работа № 1</span>
+        </div>
+        <h1>Цветовые модели</h1>
+        <p>Интерактивное преобразование CMYK ↔ RGB ↔ HLS</p>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="control-column" aria-label="Просмотр цвета и настройки">
+        <section class="preview-card paper-card">
+          <div class="section-heading">
+            <div><span class="section-number">01</span><h2>Текущий цвет</h2></div>
+            <span class="status-chip">RGB</span>
+          </div>
+
+          <div class="swatch-frame">
+            <div id="color-swatch" class="color-swatch" aria-label="Предпросмотр выбранного цвета"></div>
+          </div>
+
+          <div class="picker-row">
+            <label class="native-picker">
+              <input id="color-picker" type="color" value="#3a78f2" />
+              <span class="picker-icon" aria-hidden="true">◉</span><span>Палитра</span>
+            </label>
+            <label class="hex-field">
+              <span>HEX</span>
+              <input id="hex-input" type="text" value="#3A78F2" maxlength="7" spellcheck="false" />
+            </label>
+          </div>
+          <p id="hex-error" class="field-error" role="alert"></p>
+        </section>
+
+        <section class="settings-card paper-card">
+          <div class="section-heading compact">
+            <div><span class="section-number">02</span><h2>Параметры расчёта</h2></div>
+          </div>
+
+          <label class="setting-field">
+            <span>Стандарт освещения</span>
+            <select id="illuminant-select">
+              <option value="D65">D65 — дневной свет, sRGB</option>
+              <option value="D50">D50 — тёплый, полиграфия</option>
+              <option value="E">E — равноэнергетический</option>
+            </select>
+          </label>
+
+          <fieldset class="setting-field">
+            <legend>Цветоделение CMYK</legend>
+            <div class="segmented-control">
+              <label><input type="radio" name="separation" value="GCR" checked /><span>GCR</span></label>
+              <label><input type="radio" name="separation" value="UCR" /><span>UCR</span></label>
+            </div>
+            <p id="separation-help" class="setting-help">Серая составляющая заменяется чёрной во всём диапазоне.</p>
+          </fieldset>
+
+          <fieldset class="setting-field">
+            <legend>Цвет вне охвата RGB</legend>
+            <div class="segmented-control">
+              <label><input type="radio" name="gamut" value="clipping" checked /><span>Clipping</span></label>
+              <label><input type="radio" name="gamut" value="scaling" /><span>Scaling</span></label>
+            </div>
+          </fieldset>
+
+          <div id="gamut-warning" class="warning" role="status" aria-live="polite" hidden>
+            <span aria-hidden="true">!</span><p></p>
+          </div>
+        </section>
+      </aside>
+
+      <section class="models-area" aria-label="Редактор цветовых моделей">
+        <div class="models-heading">
+          <div><span class="section-number">03</span><h2>Координаты цвета</h2></div>
+          <p>Меняйте любое значение — остальные модели пересчитаются автоматически.</p>
+        </div>
+
+        <div class="model-grid">
+          <article class="model-card paper-card rgb-card">
+            <div class="model-card-head">
+              <div><span class="model-kicker">Аддитивная модель</span><h3>RGB</h3></div>
+              <span class="model-index">A</span>
+            </div>
+            <div id="rgb-controls" class="channel-list"></div>
+          </article>
+
+          <article class="model-card paper-card cmyk-card">
+            <div class="model-card-head">
+              <div><span class="model-kicker">Субтрактивная модель</span><h3>CMYK</h3></div>
+              <span class="model-index">B</span>
+            </div>
+            <div id="cmyk-controls" class="channel-list"></div>
+          </article>
+
+          <article class="model-card paper-card hls-card">
+            <div class="model-card-head">
+              <div><span class="model-kicker">Цилиндрическая модель</span><h3>HLS</h3></div>
+              <span class="model-index">C</span>
+            </div>
+            <div id="hls-controls" class="channel-list"></div>
+          </article>
+        </div>
+
+        <details class="calculation-card paper-card" open>
+          <summary>
+            <span><span class="section-number">04</span><strong>Промежуточный расчёт XYZ и Lab</strong></span>
+            <span class="summary-hint">матрица формируется на лету</span>
+          </summary>
+          <div class="calculation-content">
+            <div class="coordinates">
+              <div class="coordinate-block">
+                <span>XYZ</span>
+                <div id="xyz-output" class="coordinate-inputs">
+                  <label>X <input type="number" step="0.01" data-space="xyz" data-index="0" /></label>
+                  <label>Y <input type="number" step="0.01" data-space="xyz" data-index="1" /></label>
+                  <label>Z <input type="number" step="0.01" data-space="xyz" data-index="2" /></label>
+                </div>
+              </div>
+              <div class="coordinate-block">
+                <span>CIELAB</span>
+                <div id="lab-output" class="coordinate-inputs">
+                  <label>L* <input type="number" step="0.01" data-space="lab" data-index="0" /></label>
+                  <label>a* <input type="number" step="0.01" data-space="lab" data-index="1" /></label>
+                  <label>b* <input type="number" step="0.01" data-space="lab" data-index="2" /></label>
+                </div>
+              </div>
+              <div class="coordinate-block white-point">
+                <span>Белая точка</span><output id="white-point-output">—</output>
+              </div>
+            </div>
+            <div class="matrix-block">
+              <div class="matrix-title">
+                <span id="matrix-label">Матрица linear RGB → XYZ (D65)</span><span class="live-dot">LIVE</span>
+              </div>
+              <div id="matrix-output" class="matrix" aria-label="Матрица преобразования RGB в XYZ"></div>
+            </div>
+          </div>
+        </details>
+      </section>
+    </main>
+
+    <footer><span>Все преобразования выполнены вручную на JavaScript.</span><span>Без библиотек конвертации.</span></footer>
+
+    <template id="channel-template">
+      <div class="channel-control">
+        <div class="channel-meta">
+          <label></label>
+          <div class="number-wrap"><input class="channel-number" type="number" /><span class="unit"></span></div>
+        </div>
+        <input class="channel-range" type="range" />
+      </div>
+    </template>
+
+    <script src="./js/model/color-model.js"></script>
+    <script src="./js/view/color-view.js"></script>
+    <script src="./js/controller/color-controller.js"></script>
+    <script src="./js/app.js"></script>
+  </body>
+</html>

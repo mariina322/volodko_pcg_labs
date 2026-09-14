@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Микро-тесты — цветовые модели</title>
+    <style>
+      :root { font-family: Inter, "Segoe UI", sans-serif; color: #182238; background: #edf1f7; }
+      body { width: min(760px, calc(100% - 32px)); margin: 40px auto; }
+      header { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
+      h1 { margin: 0 0 4px; font-family: Georgia, serif; font-size: 2rem; }
+      p { margin: 0; color: #687086; }
+      a { color: #245fd6; font-weight: 700; text-decoration: none; }
+      #summary { margin-bottom: 12px; padding: 13px 16px; border-radius: 9px; font-weight: 800; }
+      #summary.pass { color: #14683d; background: #e6f6ed; border: 1px solid #a8d8bb; }
+      #summary.fail { color: #872f20; background: #fff0eb; border: 1px solid #e1ad9f; }
+      ol { margin: 0; padding: 0; list-style: none; border: 1px solid #bac4d6; border-radius: 12px; overflow: hidden; background: #fff; }
+      li { display: grid; grid-template-columns: 24px 1fr; gap: 10px; padding: 13px 16px; border-bottom: 1px solid #d8deea; }
+      li:last-child { border-bottom: 0; }
+      li span { font-weight: 900; }
+      li.pass span { color: #18854b; }
+      li.fail span { color: #b74727; }
+      small { display: block; margin-top: 4px; color: #8c3926; }
+      @media (max-width: 560px) { header { align-items: flex-start; flex-direction: column; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div><h1>Автоматические микро-тесты</h1><p>Математический слой · вариант 6</p></div>
+      <a href="../index.html">← Вернуться к приложению</a>
+    </header>
+    <div id="summary">Выполняются…</div>
+    <ol id="results"></ol>
+    <script type="module">
+      import { runTests } from "./color-model.test.js";
+      const results = runTests();
+      const failed = results.filter((result) => !result.passed);
+      const summary = document.querySelector("#summary");
+      summary.textContent = failed.length
+        ? `Не пройдено: ${failed.length} из ${results.length}`
+        : `Все тесты пройдены: ${results.length} из ${results.length}`;
+      summary.className = failed.length ? "fail" : "pass";
+      document.querySelector("#results").replaceChildren(...results.map((result) => {
+        const item = document.createElement("li");
+        item.className = result.passed ? "pass" : "fail";
+        const icon = document.createElement("span");
+        icon.textContent = result.passed ? "✓" : "✗";
+        const text = document.createElement("div");
+        text.textContent = result.name;
+        if (!result.passed) {
+          const message = document.createElement("small");
+          message.textContent = result.message;
+          text.append(message);
+        }
+        item.append(icon, text);
+        return item;
+      }));
+    </script>
+  </body>
+</html>
