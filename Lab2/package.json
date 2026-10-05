@@ -1,0 +1,9 @@
+{
+  "name": "lab2-image-metadata",
+  "version": "1.0.0",
+  "description": "Лабораторная работа 2. Чтение информации из графических файлов",
+  "private": true,
+  "scripts": {
+    "start": "npx --yes serve . -l 3000"
+  }
+}

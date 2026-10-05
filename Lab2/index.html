@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лабораторная работа 2</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Чтение информации из графических файлов</h1>
+        <p>HTML + CSS + JavaScript + Web Workers</p>
+    </header>
+
+    <section class="panel">
+        <h2>Выбор папки</h2>
+
+        <input
+            id="folderInput"
+            type="file"
+            webkitdirectory
+            directory
+            multiple
+        >
+
+        <div class="buttons">
+            <button id="scanButton" disabled>Начать обработку</button>
+            <button id="clearButton" class="secondary">Очистить</button>
+        </div>
+
+        <p id="status">Папка не выбрана.</p>
+    </section>
+
+    <section class="panel statistics">
+        <div>
+            <span>Всего файлов</span>
+            <strong id="total">0</strong>
+        </div>
+        <div>
+            <span>Обработано</span>
+            <strong id="processed">0</strong>
+        </div>
+        <div>
+            <span>Успешно</span>
+            <strong id="valid">0</strong>
+        </div>
+        <div>
+            <span>Ошибки</span>
+            <strong id="errors">0</strong>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="progress-row">
+            <progress id="progress" value="0" max="100"></progress>
+            <span id="progressText">0%</span>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="table-header">
+            <h2>Результаты</h2>
+            <input id="filter" type="text" placeholder="Фильтр по имени файла...">
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>Имя файла</th>
+                    <th>Формат</th>
+                    <th>Ширина</th>
+                    <th>Высота</th>
+                    <th>Разрешение</th>
+                    <th>Глубина цвета</th>
+                    <th>Сжатие</th>
+                    <th>Статус</th>
+                </tr>
+                </thead>
+                <tbody id="resultBody"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Особенности реализации</h2>
+        <ul>
+            <li>Обработка выполняется в Web Workers.</li>
+            <li>Файлы не загружаются целиком в память.</li>
+            <li>Используется частичное чтение через File.slice().</li>
+            <li>JPEG просматривается блоками по 64 КБ.</li>
+            <li>PNG анализируется по chunks.</li>
+            <li>TIFF анализируется по IFD и тегам.</li>
+            <li>Основной поток браузера остаётся отзывчивым.</li>
+        </ul>
+    </section>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
