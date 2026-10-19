@@ -1,0 +1,32 @@
+* { box-sizing: border-box; }
+:root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #202632; background: #f2f5f9; }
+body { margin: 0; }
+header { padding: 28px max(20px, calc((100% - 1200px) / 2)); background: #1f3657; color: white; }
+header h1 { margin: 0 0 8px; font-size: clamp(1.5rem, 3vw, 2.2rem); }
+header p { margin: 0; color: #d8e3f2; }
+main { max-width: 1200px; margin: 24px auto; padding: 0 18px 36px; }
+.panel { background: white; border: 1px solid #e0e6ef; border-radius: 14px; padding: 20px; box-shadow: 0 3px 14px #26364b0b; }
+.controls { display: grid; gap: 12px; margin-bottom: 18px; }
+label { font-weight: 650; }
+.file-label { margin-bottom: -4px; }
+input[type="file"], select { width: 100%; }
+select, input[type="file"] { padding: 10px; border: 1px solid #cbd4e1; border-radius: 8px; background: #fff; color: inherit; }
+.parameter { display: grid; gap: 6px; }
+input[type="range"] { width: 100%; accent-color: #2b67b2; }
+button { border: 0; border-radius: 9px; padding: 12px 16px; background: #245da8; color: white; font-weight: 700; cursor: pointer; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.secondary { background: #e8edf5; color: #20344f; }
+#status { margin: 0; color: #41536a; min-height: 1.3em; }
+.hint { color: #6d7a8c; font-size: .9rem; margin: 0; }
+.workspace { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.image-panel { min-width: 0; }
+h2 { font-size: 1.1rem; margin: 0 0 14px; }
+.image-panel canvas { display: block; width: 100%; height: auto; max-height: 620px; object-fit: contain; background: repeating-conic-gradient(#f1f3f6 0% 25%, #fff 0% 50%) 50% / 20px 20px; border-radius: 8px; }
+.image-panel p { margin-top: 10px; }
+.histogram-panel { margin-top: 18px; }
+#histogramCanvas { display: block; width: 100%; height: auto; }
+.notes { margin-top: 18px; line-height: 1.6; }
+.notes p:last-child { margin-bottom: 0; }
+code { background: #edf1f7; padding: 2px 5px; border-radius: 4px; }
+[hidden] { display: none !important; }
+@media (max-width: 760px) { .workspace { grid-template-columns: 1fr; } main { margin-top: 14px; } .panel { padding: 15px; } }

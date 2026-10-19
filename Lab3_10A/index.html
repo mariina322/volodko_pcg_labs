@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Лабораторная работа 3 — обработка изображений</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Обработка цифровых изображений</h1>
+    <p>Лабораторная работа 3 · группа 10А</p>
+  </header>
+
+  <main>
+    <section class="panel controls">
+      <label class="file-label" for="fileInput">1. Выберите изображение</label>
+      <input id="fileInput" type="file" accept="image/*">
+      <p class="hint">Подойдут PNG, JPEG, BMP и другие форматы, которые открывает браузер.</p>
+
+      <label for="methodSelect">2. Метод обработки</label>
+      <select id="methodSelect">
+        <optgroup label="Контраст и гистограмма">
+          <option value="contrast">Линейное растяжение контраста</option>
+          <option value="equalize">Выравнивание гистограммы (яркость)</option>
+          <option value="clahe">CLAHE — локальное выравнивание гистограммы</option>
+          <option value="brightness">Изменение яркости</option>
+        </optgroup>
+        <optgroup label="Сглаживание и повышение резкости">
+          <option value="box">Усредняющий фильтр (разделимый)</option>
+          <option value="gaussian">Фильтр Гаусса (разделимый)</option>
+          <option value="median">Медианный фильтр</option>
+          <option value="sharpen">Повышение резкости</option>
+        </optgroup>
+        <optgroup label="Сегментация и границы">
+          <option value="sobel">Собель: градиент + карта направления</option>
+          <option value="otsu">Глобальный порог Отсу</option>
+          <option value="adaptive">Адаптивный порог (Sauvola, SAT)</option>
+        </optgroup>
+        <optgroup label="Морфология">
+          <option value="dilate">Дилатация (расширение)</option>
+          <option value="erode">Эрозия (сужение)</option>
+          <option value="morphGradient">Морфологический градиент</option>
+          <option value="topHat">Top-Hat</option>
+          <option value="blackHat">Black-Hat</option>
+        </optgroup>
+      </select>
+
+      <div class="parameter" id="radiusGroup">
+        <label for="radius">Размер окна / радиус: <output id="radiusValue">2</output></label>
+        <input id="radius" type="range" min="1" max="7" value="2">
+      </div>
+      <div class="parameter" id="brightnessGroup" hidden>
+        <label for="brightness">Яркость: <output id="brightnessValue">20</output></label>
+        <input id="brightness" type="range" min="-100" max="100" value="20">
+      </div>
+      <div class="parameter" id="clipGroup" hidden>
+        <label for="clipLimit">CLAHE clip limit: <output id="clipValue">2.0</output></label>
+        <input id="clipLimit" type="range" min="10" max="50" value="20">
+      </div>
+      <div class="parameter" id="thresholdGroup" hidden>
+        <label for="threshold">Порог Sauvola k: <output id="thresholdValue">0.20</output></label>
+        <input id="threshold" type="range" min="5" max="50" value="20">
+      </div>
+
+      <label for="edgeMode">Обработка краёв изображения</label>
+      <select id="edgeMode">
+        <option value="reflect">Reflect — зеркальное отражение</option>
+        <option value="clamp">Clamp — крайний пиксель</option>
+      </select>
+
+      <button id="processButton" disabled>Обработать изображение</button>
+      <button id="resetButton" class="secondary" disabled>Сбросить результат</button>
+      <button id="downloadButton" class="secondary" disabled>Скачать результат PNG</button>
+      <p id="status" role="status">Сначала загрузите изображение.</p>
+    </section>
+
+    <section class="workspace">
+      <div class="panel image-panel">
+        <h2>Исходное изображение</h2>
+        <canvas id="sourceCanvas"></canvas>
+        <p id="sourceInfo" class="hint">Размер: —</p>
+      </div>
+      <div class="panel image-panel">
+        <h2>Результат</h2>
+        <canvas id="resultCanvas"></canvas>
+        <p id="resultInfo" class="hint">Здесь появится обработанное изображение.</p>
+      </div>
+    </section>
+
+    <section class="panel histogram-panel">
+      <div>
+        <h2>Гистограмма яркости</h2>
+        <p class="hint">Серая — исходное изображение, синяя — результат.</p>
+      </div>
+      <canvas id="histogramCanvas" width="768" height="220"></canvas>
+    </section>
+    <section class="panel notes">
+      <h2>Как устроена обработка</h2>
+      <p>Изображение переводится в массив пикселей RGBA через <code>ImageData</code>. Алгоритмы работают по значениям массива, без встроенных фильтров обработки изображений. Для оконных фильтров доступны Reflect и Clamp.</p>
+      <p>Фильтр Гаусса и усредняющий фильтр выполняются двумя одномерными проходами. Адаптивный порог использует интегральные изображения для быстрого вычисления локальных среднего и дисперсии.</p>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
