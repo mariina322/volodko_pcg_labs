@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RasterLab — Лабораторная работа №4</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">▦</span><div><b>RasterLab</b><small>Лабораторная работа №4 · Базовые растровые алгоритмы</small></div></div>
+    <div class="top-actions"><span class="status-dot"></span><span>Виртуальный растр активен</span></div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <section class="panel">
+        <div class="section-title"><span>01</span> Алгоритм</div>
+        <label for="algorithm">Метод растеризации</label>
+        <select id="algorithm">
+          <option value="step">Пошаговый алгоритм</option>
+          <option value="dda">ЦДА (DDA)</option>
+          <option value="bresenham">Брезенхем — отрезок</option>
+          <option value="circle">Брезенхем — окружность</option>
+          <option value="wu">Ву — сглаженная линия</option>
+        </select>
+        <div id="lineInputs">
+          <div class="field-grid">
+            <div><label for="x1">X₁</label><input id="x1" type="number" value="-12"></div>
+            <div><label for="y1">Y₁</label><input id="y1" type="number" value="-7"></div>
+            <div><label for="x2">X₂</label><input id="x2" type="number" value="14"></div>
+            <div><label for="y2">Y₂</label><input id="y2" type="number" value="9"></div>
+          </div>
+        </div>
+        <div id="circleInputs" class="hidden">
+          <div class="field-grid">
+            <div><label for="cx">Центр X</label><input id="cx" type="number" value="0"></div>
+            <div><label for="cy">Центр Y</label><input id="cy" type="number" value="0"></div>
+            <div class="span-2"><label for="radius">Радиус</label><input id="radius" type="number" min="1" value="12"></div>
+          </div>
+        </div>
+        <div class="field-grid">
+          <div class="span-2"><label for="pixelColor">Цвет пикселей</label><input id="pixelColor" type="color" value="#55d6be"></div>
+        </div>
+        <button id="drawBtn" class="primary full">Построить</button>
+        <button id="clearBtn" class="secondary full">Очистить растр</button>
+      </section>
+
+      <section class="panel">
+        <div class="section-title"><span>02</span> Отображение</div>
+        <label for="zoom">Масштаб ячейки <b id="zoomValue">18 px</b></label>
+        <input id="zoom" type="range" min="8" max="32" value="18">
+        <label class="check-row"><input id="showGrid" type="checkbox" checked> Показывать сетку</label>
+        <label class="check-row"><input id="showAxes" type="checkbox" checked> Показывать оси и координаты</label>
+        <label class="check-row"><input id="showValues" type="checkbox"> Показывать координаты ячеек</label>
+      </section>
+
+      <section class="panel stats-panel">
+        <div class="section-title"><span>03</span> Результат</div>
+        <div class="stat"><span>Закрашено ячеек</span><b id="pixelCount">0</b></div>
+        <div class="stat"><span>Время алгоритма</span><b id="elapsed">—</b></div>
+        <div class="stat"><span>Диапазон растра</span><b>−64 … +64</b></div>
+        <p class="hint">Координата (0, 0) находится в центре сетки. Одна целочисленная координата соответствует одной ячейке виртуального растра.</p>
+      </section>
+    </aside>
+
+    <section class="workspace">
+      <div class="workspace-head">
+        <div><h1>Рабочая область</h1><p>Дискретная координатная плоскость · 129 × 129 ячеек</p></div>
+        <div class="legend"><i></i> Закрашенный пиксель <i class="legend-soft"></i> Сглаживание</div>
+      </div>
+      <div class="canvas-wrap"><canvas id="raster" width="900" height="700" aria-label="Виртуальный растр"></canvas></div>
+      <div class="canvas-footer"><span id="cursorCoords">Координаты: —</span><span>ЛКМ по ячейке — показать координаты</span></div>
+    </section>
+
+    <section class="panel benchmark-panel">
+      <div class="bench-heading"><div><div class="section-title"><span>04</span> Производительность</div><h2>Стресс-тестирование</h2><p>Измерение чистой генерации виртуального растра, без отрисовки интерфейса.</p></div><span class="bench-icon">◷</span></div>
+      <div class="bench-controls">
+        <label for="benchMode">Набор тестов</label>
+        <select id="benchMode"><option value="full">Полный тест: 100 000 отрезков + 50 000 окружностей</option><option value="quick">Быстрый тест: 5 000 отрезков + 2 000 окружностей</option></select>
+        <button id="benchmarkBtn" class="primary full">Запустить бенчмарк</button>
+        <div id="benchStatus" class="bench-status">Ожидание запуска</div>
+      </div>
+      <div class="chart-card"><div class="chart-title">Время выполнения алгоритмов</div><div id="algorithmChart" class="bar-chart"><div class="empty-chart">Запустите тест, чтобы увидеть результаты</div></div></div>
+      <div class="chart-card"><div class="chart-title">Зависимость времени от количества отрезков</div><div id="scalingChart" class="scaling-chart"><div class="empty-chart">График появится после тестирования</div></div></div>
+      <div class="bench-note">Для сопоставимости каждый алгоритм получает одинаковый заранее сгенерированный набор координат. Время включает вычисления и запись в виртуальный массив, но не включает отрисовку.</div>
+      <button id="downloadCsv" class="secondary full" disabled>Скачать результаты CSV</button>
+    </section>
+  </main>
+  <footer>RasterLab · HTML / CSS / JavaScript · Алгоритмы работают только с виртуальным растром</footer>
+  <script src="app.js"></script>
+</body>
+</html>
