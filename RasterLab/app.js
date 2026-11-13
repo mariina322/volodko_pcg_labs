@@ -78,28 +78,18 @@ const target = {
 function stepLine(x1, y1, x2, y2, t = target) {
   const dx = x2 - x1;
   const dy = y2 - y1;
-
-  const n = Math.max(
-    Math.abs(dx),
-    Math.abs(dy)
-  );
+  const n = Math.max(Math.abs(dx), Math.abs(dy));
 
   if (n === 0) {
     t.setPixel(x1, y1, 1);
     return;
   }
 
-  const sx = dx / n;
-  const sy = dy / n;
-
-  let x = x1;
-  let y = y1;
-
+  // Пошаговый вариант: координаты каждого пикселя вычисляются
+  // непосредственно по параметрическому уравнению отрезка.
   for (let i = 0; i <= n; i++) {
-    t.setPixel(Math.round(x), Math.round(y), 1);
-
-    x += sx;
-    y += sy;
+    const k = i / n;
+    t.setPixel(Math.round(x1 + dx * k), Math.round(y1 + dy * k), 1);
   }
 }
 
@@ -185,38 +175,30 @@ function bresenhamLine(x1, y1, x2, y2, t = target) {
 function bresenhamCircle(cx, cy, r, t = target) {
   cx = Math.round(cx);
   cy = Math.round(cy);
-  r = Math.max(0, Math.round(r));
+  r = Math.abs(Math.round(r));
 
   let x = 0;
   let y = r;
+  let d = 1 - r;
 
-  let d = 3 - 2 * r;
+  while (x <= y) {
+    // Восемь точек, симметричных относительно осей и диагоналей.
+    t.setPixel(cx + x, cy + y, 1);
+    t.setPixel(cx - x, cy + y, 1);
+    t.setPixel(cx + x, cy - y, 1);
+    t.setPixel(cx - x, cy - y, 1);
+    t.setPixel(cx + y, cy + x, 1);
+    t.setPixel(cx - y, cy + x, 1);
+    t.setPixel(cx + y, cy - x, 1);
+    t.setPixel(cx - y, cy - x, 1);
 
-  function plot(px, py) {
-    t.setPixel(cx + px, cy + py, 1);
-    t.setPixel(cx - px, cy + py, 1);
-
-    t.setPixel(cx + px, cy - py, 1);
-    t.setPixel(cx - px, cy - py, 1);
-
-    t.setPixel(cx + py, cy + px, 1);
-    t.setPixel(cx - py, cy + px, 1);
-
-    t.setPixel(cx + py, cy - px, 1);
-    t.setPixel(cx - py, cy - px, 1);
-  }
-
-  while (y >= x) {
-    plot(x, y);
-
-    x++;
-
-    if (d > 0) {
-      y--;
-      d += 4 * (x - y) + 10;
+    if (d < 0) {
+      d += 2 * x + 3;
     } else {
-      d += 4 * x + 6;
+      d += 2 * (x - y) + 5;
+      y--;
     }
+    x++;
   }
 }
 
@@ -288,16 +270,199 @@ function wuLine(x0, y0, x1, y1, t = target) {
 }
 
 
+/* =========================================
+   7. КАСТЛ—ПИТВЕЙ ДЛЯ ОТРЕЗКА
+========================================= */
+
+function castlePitteway(x0, y0, x1, y1, t = target) {
+  x0 = Math.round(x0); y0 = Math.round(y0);
+  x1 = Math.round(x1); y1 = Math.round(y1);
+
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const adx = Math.abs(dx);
+  const ady = Math.abs(dy);
+
+  if (adx === 0 && ady === 0) {
+    t.setPixel(x0, y0, 1);
+    return;
+  }
+
+  const xMajor = adx >= ady;
+  const major = Math.max(adx, ady);
+  const minor = Math.min(adx, ady);
+  const sx = dx >= 0 ? 1 : -1;
+  const sy = dy >= 0 ? 1 : -1;
+
+  // Строим период из S (шаг по главной оси) и D (диагональный шаг).
+  let a = major - minor;
+  let b = minor;
+  let s = "S";
+  let d = "D";
+
+  while (a !== b && b !== 0) {
+    if (a > b) {
+      const q = Math.floor(a / b);
+      a %= b;
+      s = s + d.repeat(q);
+    } else {
+      const q = Math.floor(b / a);
+      b %= a;
+      d = d + s.repeat(q);
+    }
+  }
+
+  const period = s + d;
+  const repetitions = a + b;
+  let x = x0;
+  let y = y0;
+  let produced = 0;
+
+  t.setPixel(x, y, 1);
+  for (let rep = 0; rep < repetitions && produced < major; rep++) {
+    for (let i = 0; i < period.length && produced < major; i++) {
+      const diagonal = period[i] === "D";
+      if (xMajor) {
+        x += sx;
+        if (diagonal) y += sy;
+      } else {
+        y += sy;
+        if (diagonal) x += sx;
+      }
+      t.setPixel(x, y, 1);
+      produced++;
+    }
+  }
+
+  // Гарантируем точное попадание в конечную точку при крайних случаях.
+  t.setPixel(x1, y1, 1);
+}
+
+
+/* =========================================
+   8. ЭЛЛИПС И ДУГА ЭЛЛИПСА (ПИТВЕЙ)
+========================================= */
+
+function ellipseCore(cx, cy, a, b, t = target, filter = null) {
+  cx = Math.round(cx); cy = Math.round(cy);
+  a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b));
+
+  const plot = (x, y) => {
+    const points = [
+      [cx + x, cy + y], [cx - x, cy + y],
+      [cx + x, cy - y], [cx - x, cy - y]
+    ];
+
+    for (const point of points) {
+      if (!filter || filter(point[0] - cx, point[1] - cy)) {
+        t.setPixel(point[0], point[1], 1);
+      }
+    }
+  };
+
+  if (a === 0 && b === 0) {
+    t.setPixel(cx, cy, 1);
+    return;
+  }
+
+  if (a === 0) {
+    for (let y = -b; y <= b; y++) plot(0, y);
+    return;
+  }
+
+  if (b === 0) {
+    for (let x = -a; x <= a; x++) plot(x, 0);
+    return;
+  }
+
+  // Midpoint ellipse: область 1.
+  let x = 0;
+  let y = b;
+  const a2 = a * a;
+  const b2 = b * b;
+  let dx = 2 * b2 * x;
+  let dy = 2 * a2 * y;
+  let p1 = b2 - a2 * b + 0.25 * a2;
+
+  while (dx < dy) {
+    plot(x, y);
+    x++;
+    dx += 2 * b2;
+
+    if (p1 < 0) {
+      p1 += dx + b2;
+    } else {
+      y--;
+      dy -= 2 * a2;
+      p1 += dx - dy + b2;
+    }
+  }
+
+  // Область 2.
+  let p2 = b2 * (x + 0.5) * (x + 0.5) +
+           a2 * (y - 1) * (y - 1) - a2 * b2;
+
+  while (y >= 0) {
+    plot(x, y);
+    y--;
+    dy -= 2 * a2;
+
+    if (p2 > 0) {
+      p2 += a2 - dy;
+    } else {
+      x++;
+      dx += 2 * b2;
+      p2 += dx - dy + a2;
+    }
+  }
+}
+
+function pittewayEllipse(cx, cy, a, b, t = target) {
+  ellipseCore(cx, cy, a, b, t);
+}
+
+function pittewayArc(cx, cy, a, b, startDeg, endDeg, t = target) {
+  let span = endDeg - startDeg;
+
+  if (Math.abs(span) >= 360 || span === 0) {
+    pittewayEllipse(cx, cy, a, b, t);
+    return;
+  }
+
+  if (span < 0) span += 360;
+
+  const start = ((startDeg % 360) + 360) % 360 * Math.PI / 180;
+  const end = start + span * Math.PI / 180;
+
+  const inArc = (x, y) => {
+    // Угол точки относительно центра эллипса.
+    let angle = Math.atan2(
+      y / Math.max(1, Math.abs(b)),
+      x / Math.max(1, Math.abs(a))
+    );
+
+    if (angle < 0) angle += Math.PI * 2;
+
+    let relative = angle - start;
+
+    if (relative < 0) relative += Math.PI * 2;
+
+    return relative <= end - start + 1e-9;
+  };
+
+  ellipseCore(cx, cy, a, b, t, inArc);
+}
+
+
 const algorithms = {
   step: stepLine,
   dda: ddaLine,
   bresenham: bresenhamLine,
+  castle: castlePitteway,
   wu: wuLine
 };
-
-
 /* =========================================
-   7. ОТРИСОВКА ВИРТУАЛЬНОГО РАСТРА
+   9. ОТРИСОВКА ВИРТУАЛЬНОГО РАСТРА
 ========================================= */
 
 function render() {
@@ -414,7 +579,7 @@ function render() {
 
 
 /* =========================================
-   8. ПОСТРОЕНИЕ ПРИМИТИВОВ
+   10. ПОСТРОЕНИЕ ПРИМИТИВОВ
 ========================================= */
 
 function runDraw() {
@@ -430,6 +595,24 @@ function runDraw() {
       +$("radius").value,
       target
     );
+  } else if (method === "ellipse") {
+    pittewayEllipse(
+      +$("ex").value,
+      +$("ey").value,
+      +$("ea").value,
+      +$("eb").value,
+      target
+    );
+  } else if (method === "arc") {
+    pittewayArc(
+      +$("ax").value,
+      +$("ay").value,
+      +$("aa").value,
+      +$("ab").value,
+      +$("startAngle").value,
+      +$("endAngle").value,
+      target
+    );
   } else {
     algorithms[method](
       +$("x1").value,
@@ -442,20 +625,37 @@ function runDraw() {
 
   const elapsed = performance.now() - start;
 
-  $("elapsed").textContent =
-    elapsed.toFixed(4) + " мс";
+  $("elapsed").textContent = elapsed.toFixed(4) + " мс";
 
   render();
 }
 
 function updateInputs() {
-  const isCircle = $("algorithm").value === "circle";
+  const method = $("algorithm").value;
 
-  $("circleInputs").classList.toggle("hidden", !isCircle);
-  $("lineInputs").classList.toggle("hidden", isCircle);
+  $("lineInputs").classList.toggle(
+    "hidden",
+    !["step", "dda", "bresenham", "castle", "wu"].includes(method)
+  );
+
+  $("circleInputs").classList.toggle(
+    "hidden",
+    method !== "circle"
+  );
+
+  $("ellipseInputs").classList.toggle(
+    "hidden",
+    method !== "ellipse"
+  );
+
+  $("arcInputs").classList.toggle(
+    "hidden",
+    method !== "arc"
+  );
 }
 
 $("algorithm").addEventListener("change", updateInputs);
+
 $("drawBtn").addEventListener("click", runDraw);
 
 $("clearBtn").addEventListener("click", () => {
@@ -485,7 +685,7 @@ $("zoom").addEventListener("input", event => {
 
 
 /* =========================================
-   9. КООРДИНАТЫ ПРИ НАЖАТИИ НА ХОЛСТ
+   11. КООРДИНАТЫ ПРИ НАЖАТИИ НА ХОЛСТ
 ========================================= */
 
 canvas.addEventListener("click", event => {
@@ -506,7 +706,7 @@ canvas.addEventListener("click", event => {
 
 
 /* =========================================
-   10. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+   12. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
 ========================================= */
 
 document.querySelectorAll(".tab").forEach(tab => {
@@ -529,10 +729,8 @@ document.querySelectorAll(".tab").forEach(tab => {
     }
   });
 });
-
-
 /* =========================================
-   11. ДАННЫЕ ДЛЯ БЕНЧМАРКА
+   13. ДАННЫЕ ДЛЯ БЕНЧМАРКА
 ========================================= */
 
 function seededRandom(seed) {
@@ -573,7 +771,7 @@ function makeData(nLines, nCircles) {
 
 
 /* =========================================
-   12. ИЗМЕРЕНИЕ ВРЕМЕНИ
+   14. ИЗМЕРЕНИЕ ВРЕМЕНИ
 ========================================= */
 
 function benchmarkOne(fn, items, kind) {
@@ -606,7 +804,7 @@ function benchmarkOne(fn, items, kind) {
 
 
 /* =========================================
-   13. ГРАФИКИ БЕНЧМАРКА
+   15. ГРАФИКИ БЕНЧМАРКА
 ========================================= */
 
 const chartData = {
@@ -705,6 +903,7 @@ function drawBenchmarkChart(canvasId, points, title) {
   ctx.beginPath();
 
   ctx.moveTo(padding.left, padding.top);
+
   ctx.lineTo(
     padding.left,
     height - padding.bottom
@@ -790,6 +989,7 @@ function drawBenchmarkChart(canvasId, points, title) {
   ctx.fillText(title, padding.left, 15);
 }
 
+
 function drawAllCharts() {
   drawBenchmarkChart(
     "chartStep",
@@ -815,10 +1015,8 @@ function drawAllCharts() {
     "Брезенхем — окружность"
   );
 }
-
-
 /* =========================================
-   14. ЗАПУСК БЕНЧМАРКА
+   16. ЗАПУСК БЕНЧМАРКА
 ========================================= */
 
 const benchmarkButton = $("benchmarkBtn");
@@ -1000,7 +1198,7 @@ benchmarkButton.addEventListener("click", async () => {
 
 
 /* =========================================
-   15. ЭКСПОРТ CSV
+   17. ЭКСПОРТ CSV
 ========================================= */
 
 $("downloadCsv").addEventListener("click", () => {
@@ -1023,7 +1221,7 @@ $("downloadCsv").addEventListener("click", () => {
 
 
 /* =========================================
-   16. ИНИЦИАЛИЗАЦИЯ
+   18. ИНИЦИАЛИЗАЦИЯ
 ========================================= */
 
 updateInputs();
