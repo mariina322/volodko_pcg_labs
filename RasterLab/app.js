@@ -300,7 +300,7 @@ function castlePitteway(x0, y0, x1, y1, t = target) {
   let s = "S";
   let d = "D";
 
-  while (a !== b && b !== 0) {
+  while (a !== b && a !== 0 && b !== 0) {
     if (a > b) {
       const q = Math.floor(a / b);
       a %= b;
