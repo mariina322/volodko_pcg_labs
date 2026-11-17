@@ -294,26 +294,37 @@ function castlePitteway(x0, y0, x1, y1, t = target) {
   const sx = dx >= 0 ? 1 : -1;
   const sy = dy >= 0 ? 1 : -1;
 
-  // Строим период из S (шаг по главной оси) и D (диагональный шаг).
+// Строим период из S (шаг по главной оси) и D (диагональный шаг).
   let a = major - minor;
   let b = minor;
   let s = "S";
   let d = "D";
 
+  // Правильная конкатенация строк по алгоритму Евклида
   while (a !== b && a !== 0 && b !== 0) {
     if (a > b) {
       const q = Math.floor(a / b);
       a %= b;
-      s = s + d.repeat(q);
+      d = s.repeat(q) + d;
     } else {
       const q = Math.floor(b / a);
       b %= a;
-      d = d + s.repeat(q);
+      s = d.repeat(q) + s;
     }
   }
 
-  const period = s + d;
-  const repetitions = a + b;
+  // Точное определение итогового паттерна и количества повторений
+  let period, repetitions;
+  if (a === 0) {
+    period = d;
+    repetitions = b;
+  } else if (b === 0) {
+    period = s;
+    repetitions = a;
+  } else {
+    period = s + d;
+    repetitions = a;
+  }
   let x = x0;
   let y = y0;
   let produced = 0;
