@@ -688,6 +688,9 @@ $("zoom").addEventListener("input", event => {
    11. КООРДИНАТЫ ПРИ НАЖАТИИ НА ХОЛСТ
 ========================================= */
 
+
+let clickStep = 0;
+
 canvas.addEventListener("click", event => {
   const rect = canvas.getBoundingClientRect();
 
@@ -702,6 +705,34 @@ canvas.addEventListener("click", event => {
 
   $("cursorCoords").textContent =
     `Координаты ячейки: (${x}, ${y})`;
+
+  const method = $("algorithm").value;
+  
+  // Если выбран не алгоритм отрезка, просто ставим точку (как обычная рисовалка)
+  if (["circle", "ellipse", "arc"].includes(method)) {
+    raster.setPixel(x, y, 1);
+    render();
+    return;
+  }
+
+  if (clickStep === 0) {
+  
+    $("x1").value = x;
+    $("y1").value = y;
+    
+    raster.clear();
+    raster.setPixel(x, y, 1);
+    render();
+    
+    clickStep = 1; 
+  } else {
+    $("x2").value = x;
+    $("y2").value = y;
+    
+    runDraw();
+    
+    clickStep = 0; 
+  }
 });
 
 
